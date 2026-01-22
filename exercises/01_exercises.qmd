@@ -1,5 +1,5 @@
 ---
-title: "session01 - exercises - solutions"
+title: "session01 - exercises"
 format: html
 editor: visual
 date: 2025-07-17
@@ -44,7 +44,7 @@ The main **learning goals** of this week's practical parts are:
 -   remembering how to interpret p-values
 -   remembering how to plot model predictions
 
-# Exercise 1
+# Exercise 1 (a walk-through)
 
 ### Introduction to data
 
@@ -61,7 +61,7 @@ These are the variables that you will find within the data:
 -   `PartID`: the participant ID number
 -   `ItemID`: the item ID number
 
-Let's have a look: 
+Let's have a look:
 
 ```{r}
 #| label: load-quantese
@@ -101,7 +101,8 @@ summary(quant_lm)
 ```
 
 ### (B) plot predictions
-Plot the model predictions alongside a measure of uncertainty (standard error or 95% CI). If you can, plot the model predictions on top of the raw data. 
+
+Plot the model predictions alongside a measure of uncertainty (standard error or 95% CI). If you can, plot the model predictions on top of the raw data.
 
 ```{r}
 #| label: plot_prediction_quantese
@@ -201,7 +202,7 @@ Imagine, the researchers wanted to also test the following hypotheses:
 
 *"We hypothesize that accuracy is affected by lexical frequency."*
 
-Follow the workflow above and 
+Follow the workflow above and
 
 ### (A) run a logistic regression
 
@@ -215,6 +216,7 @@ Run an appropriate model to test the hypothesis.
 ```
 
 ### (B) plot predictions
+
 Plot the model predictions alongside a measure of uncertainty (e.g. standard error or 95% CI).
 
 ```{r plot_glm_prediction_quantese}

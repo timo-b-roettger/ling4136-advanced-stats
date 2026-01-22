@@ -9,6 +9,7 @@ execute:
   warning: false
   message: false
   cache: false
+bibliography: ../../resources/bibliography.bib
 ---
 
 # Preamble: Loading packages and configuration
@@ -28,7 +29,7 @@ run_if_not_knitting <- function(expr) {
 # nifty code using the pacman package
 # it checks if the packages specified below are installed, if not, they will be installed, if yes, they will be loaded
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(rstudioapi, tidyverse, lme4, afex)
+pacman::p_load(rstudioapi, tidyverse, lme4)
 
 # set the current working directory to the one where this file is
 run_if_not_knitting(current_working_dir <- dirname(rstudioapi::getActiveDocumentContext()$path))
@@ -40,16 +41,14 @@ run_if_not_knitting(setwd(current_working_dir))
 
 The main **learning goals** of this week's practical parts are:
 
--   getting familiar with identifying random effects
+-   becoming familiar with identifying random effects
 -   learning how to specify linear mixed effects models
 -   learning how to deal with convergence issues
 -   learning how to generate p-values for linear mixed effects models
 
 # The data
 
-In this dataset, we will be analyzing data from the following paper:
-
-Winter & Grawunder. 2012. The phonetic profile of Korean formal and informal speech registers, Journal of Phonetics 40(6). 808-815. https://doi.org/10.1016/j.wocn.2012.08.006
+In this dataset, we will be analyzing data from @grawunder_Phonetic_journalarticle_2012:
 
 In a nutshell, the authors were interested in the acoustic profile of politeness in Korean. Specifically here, they wonder whether formal `contexts` elicit higher or lower `pitch` than informal ones.
 
@@ -164,9 +163,7 @@ Perhaps the two most important questions right now are:
 
 -   How do you assume the response to be distributed, i.e., what type of GLM do you need? (linear model, logistic model, etc.)
 -   What predictors are relevant to test this hypothesis?
--   Are there non-independent data points?
-
-If so, what are the grouping variables? If you determine that there are non-independencies to be controlled for, you would need a mixed model.
+-   Are there non-independent data points? and if so, what are the grouping variables? If you determine that there are non-independencies to be controlled for, you would need a mixed model.
 
 YOU decide what model you want to fit in this session.
 
@@ -175,7 +172,7 @@ Some of these models may not converge! (And we will discuss that).
 ```{r}
 #| label: lmers
 
-# Since we want to predict the mean pitch for informal and formal contexts, we want to run a linear regression on the pitch column. Since we know participants' sex plays a large role too, we add it to the model
+# Since we want to predict the mean pitch for informal and formal contexts, we want to run a linear regression on the pitch column. Since we know participants' gender plays a large role too, we add it to the model
 
 xmdl_simple <- lm(pitch ~ context + gender,
                   data = polite)
@@ -206,10 +203,11 @@ xmdl_r_slopes <- lmer(pitch ~ context + gender +
 
 ```
 
-The final model does not converge (surprise!). Run `help('isSingular')` to learn more about this warning, but bottom line is:\
-we should not trust its estimates. What to do? One strategy that is sometimes recommended and often implemented is reducing the random slope complexity.
+The final and most appropriate model does not converge (surprise!). Run `help('isSingular')` to learn more about this warning, but the bottom line is: we should not trust its estimates.
 
-We start by removing one random slope over time. As a rule of thumb, variability across subjects is often much higher than across items, so a good point of departure is removing the slope for `sentences`:
+What to do? One strategy that is sometimes recommended and often implemented is reducing the random slope complexity.
+
+We start by removing one random slope at a time. As a rule of thumb, variability across subjects is often much higher than across items, so a good point of departure is removing the slope for items (here: `sentences`):
 
 ```{r}
 #| label: reduce-reffects
@@ -229,7 +227,7 @@ xmdl_r_slopes_red2 <- lmer(pitch ~ context  + gender +
                              (1 + context | sentence),
                            data = polite)
 # Now the model converges.
-# That is good.
+# That is good. Kinda.
 # However it is clearly anti-conservative as it does not account for important dependencies. 
 # For now, we have to live with that. 
 
@@ -298,22 +296,29 @@ Unfortunately the "maximal" model that also included by-subject random slopes di
 
 ### (e) calculate p-values and write up your analysis
 
-We use the maximal model that converges and would like to generate a p-value for the relevant effect of context, right. Now, in simple linear models, the model output gave us these p-values conveniently. For linear mixed effects models, we generate p-values slightly differently. What we do is, we compare our model *with* the relevant parameter (here `context`) to the exact same model *without the relevant parameter*.
-
-The `afex` package does that for us conveniently:
+We use the maximal model that converges and would like to generate a p-value for the relevant effect of context. Now, in simple linear models, the model output gave us these p-values conveniently. For linear mixed effects models, we generate p-values slightly differently. What we do is, we compare our model *with* the relevant parameter (here `context`) to the exact same model *without the relevant parameter*.
 
 ```{r}
 #| label: likelihood-ratio-tests
 
-# To perform likelihood ratio tests with afex:
-xmdl.afex <- mixed(pitch ~ context + gender + 
-                           (1 | subject) +
-                           # instead of a random slope we use only a random intercept
-                           (1 + context | sentence),
-                           data = polite, 
-                   check_contrasts = FALSE,
-                   method = 'LRT')
-xmdl.afex
+# full model with REML = FALSE
+xmdl_r_slopes_red2_null <- lmer(pitch ~ gender + 
+                             (1 | subject) +
+                             # instead of a random slope we use only a random intercept
+                             (1 + context | sentence),
+                             REML = FALSE,
+                           data = polite)
+
+# corresponding null model
+xmdl_r_slopes_red2_null <- lmer(pitch ~ gender + 
+                             (1 | subject) +
+                             # instead of a random slope we use only a random intercept
+                             (1 + context | sentence),
+                             REML = FALSE,
+                           data = polite)
+
+# likelihood ratio test
+anova(xmdl_r_slopes_red2_null, xmdl_r_slopes_red2)
 
 # Given the model comparison, we would conclude that, given the model and the data, the observed effect of context is significant at an alpha level of 0.05, i.e. the observed or more extreme test statistics are sufficiently improbable (p = 0.02) to reject the null hypothesis.
 
@@ -323,6 +328,13 @@ When writing up the results, you want to indicate several indices: the Chi squar
 
 Writing the whole thing up could look something like this:
 
-All data were analyzed with linear mixed models, using R (R Core Team, 2025) and the package lme4 (Bates, Maechler & Bolker, 2012) assuming a Gaussian error distribution. The model predicted pitch in Hz by context (formal vs. informal) and self-reported gender of participants (male vs. female). We included random intercepts and by-participant and by-sentence random slopes for the critical predictor context. This model did not converge, thus we removed the by-participant random slope to achieve model convergence. Using this model, we calculated p-values with likelihood ratio tests comparing the full model against a null model (i.e. the model that does not include the critical predictor context)
+All data were analyzed with linear mixed models, using R [@R_program] and the package lme4 [@bates2015package] assuming a Gaussian error distribution. The model predicted pitch in Hz by context (formal vs. informal) and self-reported gender of participants (male vs. female). We included random intercepts and by-participant and by-sentence random slopes for the critical predictor context. This model did not converge, thus we removed the by-participant random slope to achieve model convergence. Using this model, we calculated p-values with likelihood ratio tests comparing the full model against a null model (i.e. the model that does not include the critical predictor context)
 
 The model estimated that informal contexts had 15 Hz higher pitch than formal contexts (SE = 5.7). This effect was significant at an alpha level of 0.05. Thus, assuming that the context effect is zero, the test statistics or more extreme test statistics are sufficiently improbable to reject the null hypothesis (χ2(1) = 5.45, p = 0.02). However, given that the final model does not account for by-subject variability for the critical context effect, the model has to be considered anti-conservative and the inferential conclusion has to be taken with caution.
+
+# References
+
+<!-- References will auto-populate in the refs div below -->
+
+::: {#refs}
+:::

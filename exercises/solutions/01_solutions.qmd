@@ -44,7 +44,7 @@ The main **learning goals** of this week's practical parts are:
 -   remembering how to interpret p-values
 -   remembering how to plot model predictions
 
-# Exercise 1
+# Exercise 1 (a walk-through)
 
 ### Introduction to data
 
@@ -111,7 +111,7 @@ Plot the model predictions alongside a measure of uncertainty (standard error or
 dat <- predict_response(quant_lm)
 plot(dat)
 
-# more involved but forces you to think through things:
+# Alternatively: more involved but forces you to think through things:
 # create a new dataset for predictions
 new_data_quantese <- expand_grid(log_frequency = seq(from = 1,
                                                      to = 6, 
@@ -179,7 +179,7 @@ ggplot(data = quantese,
   # geom_line(aes(group = PartID),
   #           size = 1,
   #           alpha = 0.3) +
-  # alternatively you could run a smooth through the raw data
+  # alternatively you could fit a smooth through the raw data
   geom_smooth(method = "lm",
               se = FALSE,
               colour = alpha("black", 0.3)) +
@@ -274,7 +274,6 @@ plot_pred <-
   theme_minimal()
 
 plot_pred
-
 
 ```
 

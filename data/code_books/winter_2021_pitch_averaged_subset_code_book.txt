@@ -1,0 +1,9 @@
+Code book of of winter_2021_pitch_averaged_subset.csv
+
+Original article: “Winter, B., Oh, G. E., Hübscher, I., Idemaru, K., Brown, L., Prieto, P., & Grawunder, S. (2021). Rethinking the frequency code: a meta-analytic review of the role of acoustic body size in communicative phenomena. Philosophical Transactions of the Royal Society B, 376(1840), 20200400.”
+
+Variables:
+
+ID : a unique identifier for participants
+
+F0: average fundamental frequency in Hz

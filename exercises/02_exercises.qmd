@@ -1,5 +1,5 @@
 ---
-title: "session02 - exercises - solutions"
+title: "session02 - exercises"
 format: html
 editor: visual
 date: 2025-07-17
@@ -9,6 +9,7 @@ execute:
   warning: false
   message: false
   cache: false
+bibliography: ../../resources/bibliography.bib
 ---
 
 # Preamble: Loading packages and configuration
@@ -28,7 +29,7 @@ run_if_not_knitting <- function(expr) {
 # nifty code using the pacman package
 # it checks if the packages specified below are installed, if not, they will be installed, if yes, they will be loaded
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(rstudioapi, tidyverse, lme4, afex)
+pacman::p_load(rstudioapi, tidyverse, lme4)
 
 # set the current working directory to the one where this file is
 run_if_not_knitting(current_working_dir <- dirname(rstudioapi::getActiveDocumentContext()$path))
@@ -40,16 +41,14 @@ run_if_not_knitting(setwd(current_working_dir))
 
 The main **learning goals** of this week's practical parts are:
 
--   getting familiar with identifying random effects
+-   becoming familiar with identifying random effects
 -   learning how to specify linear mixed effects models
 -   learning how to deal with convergence issues
 -   learning how to generate p-values for linear mixed effects models
 
 # The data
 
-In this dataset, we will be analyzing data from the following paper:
-
-Winter & Grawunder. 2012. The phonetic profile of Korean formal and informal speech registers, Journal of Phonetics 40(6). 808-815. https://doi.org/10.1016/j.wocn.2012.08.006
+In this dataset, we will be analyzing data from @grawunder_Phonetic_journalarticle_2012:
 
 In a nutshell, the authors were interested in the acoustic profile of politeness in Korean. Specifically here, they wonder whether formal `contexts` elicit higher or lower `pitch` than informal ones.
 
@@ -140,9 +139,7 @@ Perhaps the two most important questions right now are:
 
 -   How do you assume the response to be distributed, i.e., what type of GLM do you need? (linear model, logistic model, etc.)
 -   What predictors are relevant to test this hypothesis?
--   Are there non-independent data points?
-
-If so, what are the grouping variables? If you determine that there are non-independencies to be controlled for, you would need a mixed model.
+-   Are there non-independent data points? and if so, what are the grouping variables? If you determine that there are non-independencies to be controlled for, you would need a mixed model.
 
 YOU decide what model you want to fit in this session.
 
@@ -178,3 +175,11 @@ Now, in simple linear models, the model output gave us these p-values convenient
 ```
 
 YOUR WRITE-UP HERE
+
+# References
+
+<!-- References will auto-populate in the refs div below -->
+
+::: {#refs}
+:::
+ 

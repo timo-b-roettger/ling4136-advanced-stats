@@ -1,0 +1,23 @@
+Code book of of incomplete_perception.csv
+
+Original article: “Roettger et al. (2014) Assessing incomplete neutralization of final devoicing in German”
+
+Variables:
+
+order: trial order for each listener (1-392)
+
+listener: unique identifier for each listener (n = 16)
+
+age: listeners' age
+
+item_pair: unique identifier for each word pair (e.g. pruk vs. prug, n = 24)
+
+voice: unique identifier for each speaker voice (n = 16)
+
+RT = reaction time in ms
+
+ACC = accuracy (binary, 1 = correct, 0 = incorrect)
+
+chosen_voicing = which voicing category the listener selected
+
+correct_voicing = whether the audio stimuli contained an underlyingly voiced or voiceless stop in word-final position

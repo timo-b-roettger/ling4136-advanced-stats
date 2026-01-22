@@ -9,6 +9,7 @@ execute:
   warning: false
   message: false
   cache: false
+bibliography: ../../resources/bibliography.bib
 ---
 
 # Preamble: Loading packages and configuration
@@ -28,7 +29,7 @@ run_if_not_knitting <- function(expr) {
 # nifty code using the pacman package
 # it checks if the packages specified below are installed, if not, they will be installed, if yes, they will be loaded
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(rstudioapi, tidyverse, lme4, afex)
+pacman::p_load(rstudioapi, tidyverse, lme4, ggeffects)
 
 # set the current working directory to the one where this file is
 run_if_not_knitting(current_working_dir <- dirname(rstudioapi::getActiveDocumentContext()$path))
@@ -40,7 +41,7 @@ run_if_not_knitting(setwd(current_working_dir))
 
 ### Introduction to data
 
-We will be working with Quantese again, see `01_exercise.qmd` and the other data resources for a refresher. 
+We will be working with Quantese again, see `01_exercise.qmd` and the other data resources for a refresher.
 
 ```{r}
 #| label: load-quantese
@@ -62,12 +63,10 @@ Imagine, the researchers wanted to test the following hypotheses:
 
 *"We hypothesize that log-transformed reaction times are affected by lexical frequency"*
 
-Run an appropriate linear mixed effects model to test this hypothesis. 
-If you run into convergence issues, deal with them as you see fit.
+Run an appropriate linear mixed effects model to test this hypothesis. If you run into convergence issues, deal with them as you see fit.
 
 ```{r}
 #| label: lmer_quantese
-
 
 # YOUR CODE HERE
 
@@ -75,7 +74,7 @@ If you run into convergence issues, deal with them as you see fit.
 
 ### (B) interpret the model output
 
-Take your selected model, interpret the model coefficients and calculate p-values for the relevant predictor. 
+Take your selected model, interpret the model coefficients and calculate p-values for the relevant predictor.
 
 ```{r}
 #| label: lmer_quantese
@@ -87,9 +86,9 @@ Take your selected model, interpret the model coefficients and calculate p-value
 
 ### (C) Optional: plot predictions
 
-Plot the model predictions alongside a measure of uncertainty (standard error or 95% CI). If you can, plot the model predictions on top of the raw data. 
+Plot the model predictions alongside a measure of uncertainty (standard error or 95% CI). If you can, plot the model predictions on top of the raw data.
 
-Tip: You have to set `re.form = NA` if you use the `predict()` function:
+Estimating variance components for linear mixed effects models is mathematically not as straightforward as it is for simple linear models. We skip manual extraction for now and use the beautiful `ggeffects` package. Check their `predict_response()` function and use it to derive predictions and plot them.
 
 ```{r}
 #| label: plot_prediction_quantese
@@ -100,4 +99,14 @@ Tip: You have to set `re.form = NA` if you use the `predict()` function:
 
 ### (D) write up results
 
+Write up your analysis and results accordingly.
+
 +++YOUR ANSWER HERE+++
+
+# References
+
+<!-- References will auto-populate in the refs div below -->
+
+::: {#refs}
+:::
+

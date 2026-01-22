@@ -1,0 +1,15 @@
+Code book of of winter_politeness.csv
+
+Original article: “Winter & Grawunder (2012) The phonetic profile of Korean formal and informal speech registers”
+
+Variables:
+
+subject: a unique identifier for participants
+
+gender: participants' sex (only female vs. male)
+
+sentence: a unique identifier for different stimuli sentences
+
+context: the social context (formal vs. informal)
+
+pitch: mean fundamental frequency in Hz
