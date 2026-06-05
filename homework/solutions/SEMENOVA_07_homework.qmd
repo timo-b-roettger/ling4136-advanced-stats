@@ -1,0 +1,236 @@
+---
+title: "session07 - homework"
+format: html
+editor: visual
+date: 2025-07-17
+author: Timo Roettger
+execute:
+  error: false
+  warning: false
+  message: false
+  cache: false
+---
+
+# Preamble: Loading packages and configuration
+
+```{r}
+#| label: data_and_libraries
+#| echo: false
+
+# just run this code chunk
+# function to ignoring the setting of the relative path below when knitting
+run_if_not_knitting <- function(expr) {
+  if (!isTRUE(getOption("knitr.in.progress"))) {
+    eval(expr)
+  }
+}
+
+# nifty code using the pacman package
+# it checks if the packages specified below are installed, if not, they will be installed, if yes, they will be loaded
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(rstudioapi, tidyverse, lme4, brms, bayestestR)
+
+# set the current working directory to the one where this file is
+run_if_not_knitting(current_working_dir <- dirname(rstudioapi::getActiveDocumentContext()$path))
+run_if_not_knitting(setwd(current_working_dir))
+
+# options to increase efficiency of brms models (optional)
+options(brms.backend = "cmdstanr")
+options(mc.cores = parallel::detectCores())
+
+```
+
+### Introduction to the problem
+
+We will be working with Quantese again, see `01_exercise.qmd` and the other data resources for a refresher.
+
+```{r}
+#| label: load-quantese
+
+quantese <- read_csv("../data/quantese_naming_sim.csv") 
+# add log-transformed reaction time
+quantese <- quantese |> 
+  mutate(log_rt = log(rt))
+
+# have a look
+quantese
+
+```
+
+In an earlier homework, we have assessed the following hypothesis:
+
+*"We hypothesize that log-transformed reaction times are affected by lexical frequency"*
+
+We tried to run the following model that included an appropriate random effect structure but it did not converge with `lme4`:
+
+```{r}
+#| label: lmer_quantese
+
+# formulate the corresponding LMER
+quant_lmer <- lmer(log_rt ~ log_frequency +
+                     (1 + log_frequency | PartID) +
+                     (1 | ItemID), 
+                    data = quantese)
+# your receive a warning: "boundary (singular) fit: see help('isSingular')"
+
+```
+
+Now we will re-run this model within the Bayesian framework:
+
+### (A) Specify priors
+
+Check which priors this model needs and specify weakly informative priors.
+
+Remember that weakly informative priors are priors that do not bias the posteriors in any direction, but reasonably constrain the parameter space, i.e. only reasonable values are assumed.
+
+For priors of class `Intercept` and `b`, constrain the parameter space with a wide normal distribution.
+
+```{r}
+#| label: get_prior
+
+# YOUR CODE HERE
+
+mdl_formula = bf(log_rt ~ log_frequency)
+
+get_prior(mdl_formula, quantese) #ask timo abt this again because i genuinely do not understand how and what i am supposed to be reading here
+
+#reasonable values here would be above 0?
+summary(quantese)
+#according to the data, which i do not tink i am supposed to be using rn but bear with me, log_freq and log_rt have a max of 6 and 7.8 respectively, so the range of 0 to 10 should be fine? i am not a math person
+
+plot_normal(5, 5)
+??plot_normal
+
+library(bayesrules)
+plot_normal(10, 5) #this feels wrong but i do not have the knowledge to articulate why, or what would be better, but since the most important part is nothing below 0 i think we're good? maybe?
+
+# specify weakly informative priors
+my_priors <- c(
+  prior(normal(10, 5), class = Intercept),
+  prior(normal(0, 30), class = b))
+
+```
+
+We can also now get used to specifying priors for classes `sd` and `cor`. Priors of class `sd` are priors for the variance associated with our random effects. You see here 2 `sd` priors for group `ItemID`. The first one is just a generic prior for all `ItemID` coefficients and the second one with the `coef = Intercept` stands for the random intercept variation between items. Similarly for group `PartID`, we have 3 priors. The first one is again just a generic prior for all `PartID` coefficients. The second one with the `coef = Intercept` stands for the random intercept variation between participants. And the last one with the `coef = log_frequency` stands for the random slope variation between participants for the predictor `log_frequency`. How do we specify these priors. We have usually no idea what to expect from these parameters, so we here also specify very diffuse priors centered on zero. We pick a cauchy distribution (remember? super squashed normal distributions) because they have thick tails. Let's make them super diffuse and pick a `sd = 3` for both items and participants.
+
+```{r}
+#| label: add_sd_priors
+
+# add weakly informative priors for sd
+my_priors <- c(my_priors, 
+               prior(cauchy(0, 3), class = 'sd', group = 'ItemID'),
+               prior(cauchy(0, 3), class = 'sd', group = 'PartID'))
+
+```
+
+And finally, if your model as random slopes, they have by default a correlation parameter for intercept and slope. We are not getting into the math here and will follow advice from smart people. We use Lewandowski-Kurowicka-Joe priors (shape = 1): `lkj(1)`. Specifying this prior for random slope models actually helps a lot with the fitting procedure.
+
+```{r}
+#| label: add_cor_priors
+
+# add weakly informative priors for cor
+my_priors <- c(my_priors, 
+               prior(lkj(1), class = 'cor'))
+
+```
+
+### (B) Run model
+
+Now run the model with 4 chains, 1000 warm-up and 1000 post-warm-up samples per chain. Check that chains are reasonably mixed and that sampling yielded a sufficient effective sample size. If not address the issues appropriately (check slides again).
+
+```{r}
+#| label: model_quant
+
+# if the model takes way too long to sample (more than 5-10 mins), use the following subset
+# quantese_sub <- quantese |> 
+#   filter(PartID %in% c("01","02","03","04",
+#                        "05","06","07","08"))
+
+# YOUR CODE HERE
+library(brms)
+install.packages("cmdstanr")
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+library(cmdstanr)
+install_cmdstan(cores = 2)
+cmdstanr::check_cmdstan_toolchain(fix = TRUE)
+
+
+model_quant <- brm(log_rt ~ log_frequency +
+                     (1 + log_frequency | PartID) +
+                     (1 | ItemID),
+            family = gaussian(),
+            prior = my_priors,
+            data = quantese,
+            chains = 4,
+            cores = 4, 
+            iter = 2000,
+            warmup = 1000,
+            thin = 1,
+            seed = 42)
+
+model_quant
+
+?mcmc_plot
+mcmc_plot(model_quant, type = 'trace') #notif: No divergences to plot. 7 plots show up but very small and i can't figure out how to make them bigger, but they all look sufficiently caterpillar-y, so i will say yes to convergence
+
+?mcmc_dens_overlay
+mcmc_dens_overlay(model_quant, pars = 'b_Intercept') #idek but it cannot find the function despite me finding it in search so idk
+library(bayesplot) #ok now it worked
+#close enough imo
+model_quant
+
+# Rhat values are ~ 1.00 = 1.01, which unsure if that is just within potential lack of convergence, or just outside of it? a bit unclear from the powerpoint
+# bulk ESS > 400 = check for log_frequency, but not the case for Intercept (bulk ESS 289)
+# tail ESS > 100 = check
+#unsure if i should maybe run again
+
+model_quant2 <- brm(log_rt ~ log_frequency +
+                     (1 + log_frequency | PartID) +
+                     (1 | ItemID),
+            family = gaussian(),
+            prior = my_priors,
+            data = quantese,
+            chains = 4,
+            cores = 4, 
+            iter = 6000,
+            warmup = 4000,
+            thin = 1,
+            seed = 42)
+
+
+mcmc_plot(model_quant2, type = 'trace') #similar to above
+
+mcmc_dens_overlay(model_quant2, pars = 'b_Intercept') #looks better than earlier, more overlap
+
+
+model_quant2
+
+# Rhat values are ~ 1.00 = 1.01 again, still unsure if that is just within potential lack of convergence, or just outside of it
+# bulk ESS > 400 = check for both
+# tail ESS > 100 = check for both
+#definitely better than the last one
+#google says rhat 1.01 is at the upper boundary of "good" and i might come back to try and fix it, but will accept that and keep going for now
+#oh wait i am blind? the first rhat value i 1.00 (ItemID, sd(Intercept))
+#in PartID we have rhat 1.01 for sd Intercept, 1.00 for sd log_frequency, and 1.00 for correlation, and then 1.o1 for regression coefficients and 1.00 for sigma values
+#happy with that
+```
+
+### (C) Plot posterior predictions
+
+Find a way to extract posterior samples from the model for the `Intercept` and the `log_frequency` coefficient and plot the predicted posterior mean linear model alongside its 95% Credible Intervals. There are many different ways to get there.
+
+```{r}
+#| label: plot_predictions
+
+# YOUR CODE HERE
+
+fitted.values(model_quant2) #that does not look usable
+
+post_draw <- as_draws_df(model_quant2)
+post_draw
+colnames(post_draw)
+
+library(bayesplot)
+mcmc_areas(post_draw, pars = c("b_Intercept", "b_log_frequency"), prob = 0.95) #what am i looking at right now, this does not look at all correct
+#i unfortunately do not have the time to start figuring this out so this is how far i got, sorry timo TT
+```

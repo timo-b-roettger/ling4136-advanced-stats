@@ -50,7 +50,7 @@ Let's load in the data and have a look:
 ```{r}
 #| label: load-in
 
-incomplete <- read_csv("../../data/incomplete_perception.csv") |> 
+incomplete <- read_csv("data/incomplete_perception.csv") |> 
   # preprocessing the data such that everything that ought to be a factor is one
   mutate(listener = as.factor(listener),
          voice = as.factor(voice), 
@@ -62,6 +62,20 @@ incomplete <- read_csv("../../data/incomplete_perception.csv") |>
 # have a look
 incomplete
 
+#i do not know why i cannot for the life of me make the file open so i just had to import it manually :((
+
+incomplete_perception
+
+incomplete <- incomplete_perception |> 
+  # preprocessing the data such that everything that ought to be a factor is one
+  mutate(listener = as.factor(listener),
+         voice = as.factor(voice), 
+         item_pair = as.factor(item_pair),
+         correct_voicing = as.factor(correct_voicing),
+         chosen_voicing = as.factor(chosen_voicing)
+         )
+
+incomplete
 ```
 
 These are the variables that you will find within the data:
@@ -89,6 +103,13 @@ Build that model with the appropriate random effect structure, taking into accou
 
 # YOUR CODE HERE
 
+glmer_incomplete <- glmer(chosen_voicing~correct_voicing + (1|listener) #most obviously different intercepts for different listeners
+                          + (1|item_pair) + (1|voice), #speaker voice may affect how different phonemes sound, and different phoneme pairs may have different effects
+                          data=incomplete, family=binomial)
+#i feel like i should add random slopes for listeners somehow but i am a bit unsure how to go about it... item_pair? correctness? voice? all?? TT
+
+glmer_incomplete
+
 ```
 
 ### (B) Interpret the model output
@@ -99,6 +120,34 @@ Interpret the model coefficients and calculate p-values for the relevant predict
 #| label: interpretation
 
 # YOUR CODE HERE
+
+summary(glmer_incomplete)
+
+#interpreting random effects: voice (speaker producing the items) accounts for the most variance in data. this indicates that whether a phoneme was categorised correctly or not varied between speakers, and that some speakers may have had clearer distinctions between voice and voiceless phonemes than others. item_pair explains a bit less variance, but also indicates that the specific phoneme pairs differed in correctness, which might mean that some phoneme pairs were easier/harder to distinguish. lastly, listener did not explain a lot of variance. this tells us that any differences in correctness were not caused by there being a difference in the skill of the listeners to identify voiced/voiceless phonemes, and that the different listeners performed similarly overall.
+#interpreting fixed effects: the intercept refers to the log odds of having chosen correctly (voiced) when the item was voiced, which is -0.03. I honestly do not know what that means but it does not look good. correct_voicing voiceless refers to the log odds of having chosen "voiced" when the item was voiceless, which is 0.52. Idk what that means either (yet).
+
+source("https://sebastiansauer.github.io/Rcode/logit2prob.R") #thank you github
+
+logit2prob(-0.03262)
+
+#output: 0.49. interpretation: for voiced items, listeners chose correctly 49% of the time. This likely means they were guessing, since they only had 2 answers to choose from, and a random guess in this situation would give us the correct result 50% of the time.
+
+-0.03262+0.52195 #getting the log odds for voiceless, as the former number is the log odds for voiceless as it differs from the log odds for voiced
+
+logit2prob(0.48933)
+
+#output: 0.62. interpretation: for voiceless items, listeners chose the "voiced" category 62% of the time, aka choosing incorrectly. This means they only correctly identified the voiceless phoneme 38% of the time.
+#The listeners were worse at identifying voiceless phonemes than voiced ones, which is interesting given that they performed at chance for the voiced ones. This means they could have performed better at identifying the voiceless phonemes if they had been randomly guessing.
+
+full_model <- glmer_incomplete
+null_model <- lme4::glmer(chosen_voicing ~ 1 + (1 | listener) + (1 | item_pair) + (1 | voice), data = incomplete, family = binomial)
+
+?anova
+
+anova(null_model, full_model)
+#is there no way to make this digestable at all
+#interpretation: full_model is statistically sagnificant, p-value smaller than 0.05
+
 
 ```
 
@@ -112,6 +161,29 @@ Estimating variance components for linear mixed effects models is mathematically
 #| label: plot_prediction_in
 
 # YOUR CODE HERE
+
+predict <- ggeffects::predict_response(full_model, terms = "correct_voicing")
+
+#i do not know what that warning means
+
+predict2 <- ggeffects::predict_response(full_model, terms = "correct_voicing", bias_correction = TRUE)
+
+print(predict)
+print(predict2)
+#i am not entirely sure what the bias correction did but given that "predict" has my numbers (49, 62) while predict2 has something else (50, 53), i will go with predict
+
+plot(predict)
+
+library(ggplot2)
+
+plot_prediction_in <- plot(predict) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.4) +
+  labs(title = "Model Predictions of 'Voiced' with 95% CI",
+       x = "Correct Voicing Category",
+       y = "Predicted Probability") +
+  theme_minimal()
+
+plot_prediction_in
 
 ```
 

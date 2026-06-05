@@ -38,12 +38,14 @@ pacman::p_load(readbulk, tidyverse, lme4)
 
 # load in data
 
+setwd("/Users/kseni/OneDrive/Dokumenter/ling4136-advanced-stats")
+getwd()
 ## load in raw data
-raw_data <- read_bulk(directory = "/Users/timoroettger/Teaching/UiO_Teaching/LING2136-Stat2/2026/ling4136-advanced-stats/exercises/04_exercises/Group2/raw/", 
+raw_data <- read_bulk(directory = "/Users/kseni/OneDrive/Dokumenter/ling4136-advanced-stats/exercises/04_exercises/Group2/raw/", 
                       extension = ".csv")                 
 
 ## load in subject information
-subject_info <- read_csv("/Users/timoroettger/Teaching/UiO_Teaching/LING2136-Stat2/2026/ling4136-advanced-stats/exercises/04_exercises/Group2/data/vp_info.csv")               
+subject_info <- read_csv("/Users/kseni/OneDrive/Dokumenter/ling4136-advanced-stats/exercises/04_exercises/Group2/data/vp_info.csv")               
 
 ## merge two data sets
 data <- full_join(raw_data, subject_info)                  
@@ -69,6 +71,7 @@ xmdl <- lmer(var_007 ~ var_001 * vp_003 +
                (1 | vp_id),
              data_trimmed) 
 
+
 # run lmer reduced model on phonemes/sec with simple gender main effect
 xmdl_red <- lmer(var_007 ~ var_001 + vp_003 +
                    (1 | vp_id),
@@ -80,7 +83,7 @@ model_comp <-
 
 # set working directory and store model results
 save(xmdl, xmdl_red, model_comp,
-     file = "/Users/timoroettger/Teaching/UiO_Teaching/LING2136-Stat2/2026/ling4136-advanced-stats/exercises/04_exercises/Group2/data/model_output.RData")
+     file = "/Users/kseni/OneDrive/Dokumenter/ling4136-advanced-stats/exercises/04_exercises/Group2/data/model_output.RData")
 
 
 ##########
@@ -88,7 +91,7 @@ save(xmdl, xmdl_red, model_comp,
 ##########
 
 # plot mean phoneme/second as a function of gender and mood
-Figure <- data |> 
+figure <- data |> 
   group_by(var_001, vp_003) |> 
   summarise(mean = mean(var_007)) |> 
   ggplot(aes(x = var_001, y = mean, colour = vp_003, group = vp_003)) +
@@ -104,11 +107,14 @@ Figure <- data |>
   theme_minimal() +
   theme(legend.position = "right",
         axis.line = element_blank())
+#note from class: mismatch between data and the graph: opposite for men and women
 
 # store plot
-ggsave(filename = "/Users/timoroettger/Teaching/UiO_Teaching/LING2136-Stat2/2026/ling4136-advanced-stats/exercises/04_exercises/Group2/plots/Figure.png", 
+ggsave(filename = "/Users/kseni/OneDrive/Dokumenter/ling4136-advanced-stats/exercises/04_exercises/Group2/plots/Figure.png", 
        plot = Figure,
        width = 150, 
        height = 100,
        units = "mm",
        dpi = 300)
+
+
